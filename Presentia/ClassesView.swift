@@ -10,11 +10,11 @@ struct SchoolClass: Decodable, Identifiable, Hashable {
 struct Student: Decodable, Identifiable {
     let id: UUID
     let name: String
-    let studentNumber: String?
+    let studentNumber: String
 
     enum CodingKeys: String, CodingKey {
         case id, name
-        case studentNumber = "student_number"
+        case studentNumber = "student_no"
     }
 }
 
@@ -68,9 +68,7 @@ struct StudentsView: View {
         List(students) { student in
             VStack(alignment: .leading) {
                 Text(student.name)
-                if let number = student.studentNumber {
-                    Text(number).font(.caption).foregroundStyle(.secondary)
-                }
+                Text(student.studentNumber).font(.caption).foregroundStyle(.secondary)
             }
         }
         .overlay { if let error { Text(error).foregroundStyle(.red).padding() } }
@@ -88,7 +86,7 @@ struct StudentsView: View {
                 .execute().value
             // shortcut: ids go in the URL, fine for a class of a few hundred; switch to an embedded select if classes get huge.
             students = try await supabase.from("students")
-                .select("id, name, student_number")
+                .select("id, name, student_no")
                 .in("id", values: links.map(\.studentId.uuidString))
                 .eq("deleted", value: false)
                 .order("name")
