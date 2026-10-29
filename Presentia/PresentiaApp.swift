@@ -1,7 +1,11 @@
 import SwiftUI
 import Supabase
 
-let supabase = SupabaseClient(supabaseURL: Config.supabaseURL, supabaseKey: Config.supabaseKey)
+let supabase = SupabaseClient(
+    supabaseURL: Config.supabaseURL,
+    supabaseKey: Config.supabaseKey,
+    options: .init(auth: .init(emitLocalSessionAsInitialSession: true))
+)
 
 @main
 struct PresentiaApp: App {
@@ -21,9 +25,12 @@ struct RootView: View {
             case false?: SignInView()
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.appBackground)
         .task {
+            // The stored session comes first even if expired; a refreshed one follows.
             for await (_, session) in supabase.auth.authStateChanges {
-                signedIn = session != nil
+                signedIn = session.map { !$0.isExpired } ?? false
             }
         }
     }
@@ -37,28 +44,46 @@ struct SignInView: View {
     @State private var error: String?
 
     var body: some View {
-        Form {
-            Section("Sign in to Presentia") {
-                TextField("Email", text: $email)
-                    .keyboardType(.emailAddress)
-                    .textContentType(.emailAddress)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .disabled(codeSent)
+        ScrollView {
+            VStack(spacing: 24) {
+                Image(.presentiaMark)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 64)
+                    .padding(.top, 48)
+                VStack(spacing: 6) {
+                    Text("Presentia")
+                        .font(.largeTitle.bold())
+                        .foregroundStyle(Color.ink)
+                    Text(codeSent ? "Enter the 6-digit code sent to \(email)."
+                                  : "Sign in with the same account as Presentia Desktop.")
+                        .foregroundStyle(Color.muted)
+                        .multilineTextAlignment(.center)
+                }
                 if codeSent {
                     TextField("6-digit code", text: $code)
                         .keyboardType(.numberPad)
                         .textContentType(.oneTimeCode)
+                        .presentiaField()
+                } else {
+                    TextField("Email", text: $email)
+                        .keyboardType(.emailAddress)
+                        .textContentType(.emailAddress)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .presentiaField()
+                }
+                Button(codeSent ? "Sign in" : "Send code") { Task { await submit() } }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(busy || email.isEmpty || (codeSent && code.count != 6))
+                if codeSent {
+                    Button("Use another email") { codeSent = false; code = "" }
+                }
+                if let error {
+                    Text(error).foregroundStyle(Color.danger)
                 }
             }
-            Button(codeSent ? "Sign in" : "Send code") { Task { await submit() } }
-                .disabled(busy || email.isEmpty || (codeSent && code.count != 6))
-            if codeSent {
-                Button("Use another email") { codeSent = false; code = "" }
-            }
-            if let error {
-                Text(error).foregroundStyle(.red)
-            }
+            .padding(24)
         }
     }
 
