@@ -55,13 +55,13 @@ struct SignInView: View {
                     Text("Presentia")
                         .font(.largeTitle.bold())
                         .foregroundStyle(Color.ink)
-                    Text(codeSent ? "Enter the 6-digit code sent to \(email)."
+                    Text(codeSent ? "Enter the code sent to \(email)."
                                   : "Sign in with the same account as Presentia Desktop.")
                         .foregroundStyle(Color.muted)
                         .multilineTextAlignment(.center)
                 }
                 if codeSent {
-                    TextField("6-digit code", text: $code)
+                    TextField("Code", text: $code)
                         .keyboardType(.numberPad)
                         .textContentType(.oneTimeCode)
                         .presentiaField()
@@ -75,7 +75,7 @@ struct SignInView: View {
                 }
                 Button(codeSent ? "Sign in" : "Send code") { Task { await submit() } }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(busy || email.isEmpty || (codeSent && code.count != 6))
+                    .disabled(busy || email.isEmpty || (codeSent && code.isEmpty))
                 if codeSent {
                     Button("Use another email") { codeSent = false; code = "" }
                 }
@@ -93,7 +93,7 @@ struct SignInView: View {
         error = nil
         do {
             if codeSent {
-                _ = try await supabase.auth.verifyOTP(email: email, token: code, type: .email)
+                _ = try await supabase.auth.verifyOTP(email: email, token: code.trimmingCharacters(in: .whitespaces), type: .email)
             } else {
                 try await supabase.auth.signInWithOTP(email: email)
                 codeSent = true

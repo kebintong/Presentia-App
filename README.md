@@ -11,7 +11,7 @@ and accepting new student registrations. Both work on the same data through the 
 ## What it does
 
 ### 1. Sign in
-- The teacher types their email, receives a **6-digit code**, and types it in. No password.
+- The teacher types their email, receives a **sign-in code** (the length is set in Supabase; this project uses 8 digits), and types it in. No password.
 - It is the **same account** as Settings → Phone app on the desktop, so the phone shows the same classes and students.
 
 ### 2. Classes
