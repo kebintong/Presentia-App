@@ -34,8 +34,11 @@ struct ClassesView: View {
         NavigationStack {
             List(classes) { schoolClass in
                 NavigationLink(schoolClass.name) { StudentsView(schoolClass: schoolClass) }
+                    .foregroundStyle(Color.ink)
+                    .listRowBackground(Color.surface)
             }
-            .overlay { if let error { Text(error).foregroundStyle(.red).padding() } }
+            .presentiaList()
+            .overlay { if let error { Text(error).foregroundStyle(Color.danger).padding() } }
             .navigationTitle("Classes")
             .toolbar {
                 Button("Sign out") { Task { try? await supabase.auth.signOut() } }
@@ -67,11 +70,13 @@ struct StudentsView: View {
     var body: some View {
         List(students) { student in
             VStack(alignment: .leading) {
-                Text(student.name)
-                Text(student.studentNumber).font(.caption).foregroundStyle(.secondary)
+                Text(student.name).foregroundStyle(Color.ink)
+                Text(student.studentNumber).font(.caption.monospaced()).foregroundStyle(Color.muted)
             }
+            .listRowBackground(Color.surface)
         }
-        .overlay { if let error { Text(error).foregroundStyle(.red).padding() } }
+        .presentiaList()
+        .overlay { if let error { Text(error).foregroundStyle(Color.danger).padding() } }
         .navigationTitle(schoolClass.name)
         .task { await load() }
         .refreshable { await load() }
